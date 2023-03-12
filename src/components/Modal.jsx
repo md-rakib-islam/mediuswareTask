@@ -13,22 +13,49 @@ function MyModal({ name, contacts }) {
   const [modalTwoHead, setModalTwoHead] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [allData, setAllData] = useState([]);
+  const [search, setSearch] = useState(false);
+  const [searchData, setSearchData] = useState([]);
   const toggle = () => setModal(!modal);
   const navigate = useNavigate();
 
   const searchTextValue = (e) => {
-    if (contacts == "all_contracts") {
+    setLoading(true);
+    setSearch(true);
+    if (e) {
+      axios
+        .get(`https://contact.mediusware.com/api/contacts/?search=${e}`)
+        .then((res) => {
+          setSearchData(res.data.results);
+
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else if (contacts == "all_contracts") {
+      axios
+        .get("https://contact.mediusware.com/api/contacts/")
+        .then((res) => {
+          setFilteredData(res.data.results);
+          setSearchData([]);
+          setAllData(res.data.results);
+          setModalTwoHead("All Contact Details");
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else {
       axios
         .get(
-          `https://contact.mediusware.com/api/country-contacts/${e}/?search=${e}`
+          "https://contact.mediusware.com/api/country-contacts/United%20States/"
         )
         .then((res) => {
-          console.log("responeSearch", res);
-
-          // setFilteredData(res.data.results);
-          // setAllData(res.data.results);
-          // setModalTwoHead("US Contact Details");
-          // setLoading(false);
+          setFilteredData(res.data.results);
+          setSearchData([]);
+          setAllData(res.data.results);
+          setModalTwoHead("US Contact Details");
+          setLoading(false);
         })
         .catch((error) => {
           console.log(error);
@@ -37,11 +64,12 @@ function MyModal({ name, contacts }) {
   };
   useEffect(() => {
     setTimeout(() => {
-      if (contacts == "all_contracts") {
+      if (contacts == "all_contracts" && search === false) {
         axios
           .get("https://contact.mediusware.com/api/contacts/")
           .then((res) => {
             setFilteredData(res.data.results);
+            setSearchData([]);
             setAllData(res.data.results);
             setModalTwoHead("All Contact Details");
             setLoading(false);
@@ -66,6 +94,7 @@ function MyModal({ name, contacts }) {
       }
     }, 1000);
   }, [contacts]);
+
   useEffect(() => {
     if (isChecked) {
       setFilteredData(
@@ -119,21 +148,44 @@ function MyModal({ name, contacts }) {
                     <th scope="col mx-auto">Country</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredData?.map((contact) => (
-                    <tr
-                      key={contact.id}
-                      onClick={() => {
-                        setOpenModal(!openModal);
-                        setContact(contact);
-                      }}
-                    >
-                      <td>{contact.id}</td>
-                      <td>{contact.phone}</td>
-                      <td>{contact.country.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
+
+                {searchData.length == 0 && (
+                  <tbody
+                  // style={{ display: searchData ? "none" : "inline-block" }}
+                  >
+                    {filteredData?.map((contact) => (
+                      <tr
+                        key={contact.id}
+                        onClick={() => {
+                          setOpenModal(!openModal);
+                          setContact(contact);
+                        }}
+                      >
+                        <td>{contact.id}</td>
+                        <td>{contact.phone}</td>
+                        <td>{contact.country.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                )}
+
+                {searchData && (
+                  <tbody>
+                    {searchData?.map((contact) => (
+                      <tr
+                        key={contact.id}
+                        onClick={() => {
+                          setOpenModal(!openModal);
+                          setContact(contact);
+                        }}
+                      >
+                        <td>{contact.id}</td>
+                        <td>{contact.phone}</td>
+                        <td>{contact.country.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                )}
               </table>
             </ModalBody>
           </>
